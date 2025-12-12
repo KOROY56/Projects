@@ -129,18 +129,20 @@ while (run==True):
     
     #checks if any player has won 
     if (player == 'X' ):
-        print("Player X wins !")
-        #print("The End .")
-        run1 = False
-        run2 = False
-        champ = True
+        if(champ!=True):
+            print("Player X wins !")
+            #print("The End .")
+            run1 = False
+            run2 = False
+            champ = True
     
     elif(player == 'O' ):
-        print("Player O wins !")
-        #print("The End .")
-        run1 = False 
-        run2 = False
-        champ = True
+        if (champ!=True):
+            print("Player O wins !")
+           #print("The End .")
+            run1 = False 
+            run2 = False
+            champ = True
 
     if run2!=False:  
         print("Player O type the Dimensions :")
@@ -161,18 +163,20 @@ while (run==True):
     
     #checks if any player has won 
     if (player == 'X' ):
-        print("Player X wins !")
-        #print("The End .")
-        run1 = False
-        run2 = False
-        champ = True
+        if (champ!=True):
+            print("Player X wins !")
+            #print("The End .")
+            run1 = False
+            run2 = False
+            champ = True
     
     elif(player == 'O' ):
-        print("Player O wins !")
-        #print("The End .")
-        run1 = False 
-        run2 = False
-        champ = True
+        if (champ!=True):
+            print("Player O wins !")
+            #print("The End .")
+            run1 = False 
+            run2 = False
+            champ = True
 
 
     if(champ == True):
