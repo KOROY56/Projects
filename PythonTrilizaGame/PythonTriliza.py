@@ -139,7 +139,7 @@ while (run==True):
     elif(player == 'O' ):
         if (champ!=True):
             print("Player O wins !")
-           #print("The End .")
+            #print("The End .")
             run1 = False 
             run2 = False
             champ = True
