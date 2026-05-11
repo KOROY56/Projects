@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.1.11304.174 d18.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "PythonTriliza", "PythonTriliza.pyproj", "{47F0E6ED-809E-4594-BE83-C77A3D9BFA59}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{47F0E6ED-809E-4594-BE83-C77A3D9BFA59}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47F0E6ED-809E-4594-BE83-C77A3D9BFA59}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9A3BF164-9FFF-48D8-86D5-EC3DBE732CDA}
+	EndGlobalSection
+EndGlobal
