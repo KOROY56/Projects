@@ -381,11 +381,11 @@ class DATABASE_HANDLE {
             //Specifically doing it in caps this way wont generate an error because by calling the function begin() and end()
             //The function expects a single character value , instead it gets an entire string .
             //Implementing the second method would be way to confusing and way more complex
-            /*for (std::string& word : col_names) {
+            for (std::string & word : col_names) {
                 for (char & c : word) {
                     c = std::toupper(static_cast <unsigned char> (c));
                 }
-            }*/
+            }
 
 
             //2nd Method
@@ -395,27 +395,28 @@ class DATABASE_HANDLE {
                                                                                                    //is not possible only character by character not entirely
 
             
-            for (int i = 0; i < col_names.size();i++) {
-                for (size_t j = order_type_size; j < comv.size() + order_type_size; j++) {
-                    if (col_names[i]!="\0") {
-                        if (comv[i][j] == col_names[i][j]) {
-                            std::cout << "Character Matched !" << std::endl;
-                        }
-                        else if (i != comv.size() - 1) {
-                            std::cout << "Typing Error ! " << std::endl;
-                            break;
-                        }
-                        else {
-                            std::cout << "Character Not Matched !" << std::endl;
-                            after_loop_pos = i;
-                            break;
-                        }
+          
+            for (int i = order_type_size; i < comv.size() + order_type_size; i++) {
+                if (col_names[i] != "\0") {
+                    if (comv[i + 1] == col_names[i]) {
+                        std::cout << "Character Matched !" << std::endl;
+                    }
+                    else if (i != comv.size() - 1) {
+                        std::cout << "Typing Error ! " << std::endl;
+                        break;
                     }
                     else {
-                        std::cout << "Error on line 415";
+                        std::cout << "Character Not Matched !" << std::endl;
+                        after_loop_pos = i;
+                        break;
                     }
                 }
+                else {
+                    std::cout << "Error on line 415";
+                }
+                
             }
+
             if (after_loop_pos != -1) {
                 if (comv.size()!= after_loop_pos) {
                     std::cout << "Next 3 Characters " << std::endl;
@@ -888,3 +889,5 @@ int main() {
 
     return 0;
 }
+
+
