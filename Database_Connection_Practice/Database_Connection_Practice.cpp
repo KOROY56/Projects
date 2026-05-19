@@ -136,18 +136,16 @@ public:
     }
 
     bool result_extraction() {
-        unsigned int i = 0;
-        while (class_res->next() < col_names.size()) {
+       
+        while (class_res->next() != false) {
             if (class_res == nullptr) {
                 std::cout << "class_res Empty !" << std::endl;
                 std::cout << "Error on Line 142" << std::endl;
             }
             else {
-                std::cout << class_res->getString(i);
-                i++;
-                if (i == col_names.size()) {
-                    std::cout << "There are not further Data !";
-                }
+                std::cout << col_names[0] << class_res->getInt(col_names[0]) << " ";
+                std::cout << col_names[1] << class_res->getString(col_names[1]) << std::endl;
+               
             }
         }
         if (i > 0)
@@ -159,7 +157,7 @@ public:
 
     bool metadata_creation() {
         try {
-            class_meta_res;
+            class_meta_res = class_res->getMetadata() ;
             return true;
         }
         catch (sql::SQLException& e) {
@@ -400,7 +398,7 @@ public:
     }
 
 
-    void order_col_name_char_count() {
+    void order_col_name_check() {
 
         //int after_loop_pos = -1;
 
@@ -416,6 +414,7 @@ public:
             }
         }
 
+        std::cout << "Order Transformed to Caps." << std::endl;
 
         //2nd Method
         //std::transform(col_names.begin(), col_names.end(), col_names.begin(), ::toupper); //This method does not work
@@ -425,7 +424,7 @@ public:
 
 
 
-        for (int i = order_type_size; i < comv.size() + order_type_size; i++) {
+        for (int i = 0; i < comv.size() ; i++) {
             if (col_names[i] != "\0") {
                 if (comv[i + 1] == col_names[i]) {
                     std::cout << "Character Matched !" << std::endl;
@@ -631,15 +630,18 @@ int main() {
             }
 
             object1.set_order(obj_sqlorder);
-            std::cout << object1.result_creation() << std::endl;
-            std::cout << object1.metadata_creation() << std::endl;
             object1.Order_Type();
+            object1.order_col_name_check();
 
+            std::string order_type = object1.get_order_type();
 
-            order_type = object1.get_order_type();
             if (order_type != "ERROR") {
-                std::cout << order_type << std::endl;
-                object1.result_extraction();
+                std::cout << "Order Type : " << order_type << std::endl;
+                
+                std::cout << object1.result_creation() << std::endl;
+                std::cout << object1.metadata_creation() << std::endl;
+                
+                object1.result_extraction(); // Data reveal , order output.
             }
             else {
                 std::cout << "Wrong Order !" << std::endl;
