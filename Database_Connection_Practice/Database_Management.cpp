@@ -37,9 +37,7 @@ private:
     int rows = 0;
     int table_columns_amount = 0;
     int order_columns_amount = 0;
-    int order_vec_col_index = 0;
-    int db_col_index = 0;
-    std::vector <int> db_row_count;
+
 
     std::string order = "";
     std::string order_type = "";
@@ -54,7 +52,8 @@ private:
     std::string OperatingDatabase = "";
 
 
-    std::vector<std::vector<std::string>> databases;
+    int schema_vec_row_index = 0;
+    std::vector <std::vector<std::string>> schema_vec;
     std::vector <std::string> col_names = { " " };
     std::vector <std::string> col_type_name = { " " };
 
@@ -65,17 +64,7 @@ public:
     std::vector<std::string> comv;
 
     DATABASE_HANDLE() {
-
-        std::cout << "Object Created ! " << std::endl;
-
-    }
-
-    ~DATABASE_HANDLE() {
-        //delete class_meta_res;
-        delete class_res;
-        delete class_stmt;
-        delete class_con;
-        // Note: Do not delete class_driver; the driver lifecycle is managed by the JDBC library.
+        std::cout << "Object Created !" << std::endl;
     }
 
     //Databases Connection Establishement Functions
@@ -140,18 +129,19 @@ public:
 
     void result_extraction() {
 
-        while (class_res->next() != false) {
-            if (class_res == nullptr) {
-                std::cout << "class_res Empty !" << std::endl;
-                std::cout << "Error on Line 142" << std::endl;
-            }
-            else {
-                std::cout << col_names[0] << class_res->getInt(col_names[0]) << " ";
-                std::cout << col_names[1] << class_res->getString(col_names[1]) << std::endl;
+        if (comv[1] != "*") {
+            while (class_res->next() != false) {
+                if (class_res == nullptr) {
+                    std::cout << "class_res Empty !" << std::endl;
+                    std::cout << "Error on Line 142" << std::endl;
+                }
+                else {
+                    std::cout << col_names[0] << class_res->getInt(col_names[0]) << " ";
+                    std::cout << col_names[1] << class_res->getString(col_names[1]) << std::endl;
 
+                }
             }
         }
-
     }
 
     bool metadata_creation() {
@@ -169,36 +159,25 @@ public:
     bool connection_schema() {
         try {
 
-
-            std::vector <std::string> vec;
+            // A 2D vector always starts completely empty , therefore we need to resize the vector to be able to push back data
+            // For that we use the resize() function of C++ and we either add 
+            schema_vec.resize(schema_vec_row_index + 1);
 
             class_res = class_stmt->executeQuery("SHOW DATABASES;");
 
             int i = 0;
             while (class_res->next()) {
-                vec.push_back(class_res->getString(1));
+                schema_vec[schema_vec_row_index].push_back(class_res->getString(1));
                 i++;
             }
 
-            if (databases.size() < i)
-                databases.resize(i);
-
-            //Saving The Amount Of Inner Rows Of The 2D Vector
-            db_row_count.push_back(i);
-
-            for (int i = 0; i < db_row_count[db_col_index]; i++) {
-                databases[i].push_back(vec[i]);
-            }
-            std::cout << std::endl;
-
-            for (int i = 0; i < db_row_count[db_col_index]; i++) {
-                std::cout << "DB : " << databases[i][db_col_index] << std::endl;
+            for (int i = 0; i < schema_vec[schema_vec_row_index].size(); i++) {
+                std::cout << "DB : " << schema_vec[schema_vec_row_index][i] << std::endl;
             }
 
 
 
-
-            std::string schema;
+            std::string schema_choice;
             bool run = true;
             bool found = false;
             bool message = true;
@@ -209,19 +188,19 @@ public:
                     std::cout << "\nChoose a database : ";
                 }
 
-                std::getline(std::cin, schema);
+                std::getline(std::cin, schema_choice);
 
-                for (int i = 0; i < db_row_count[db_col_index]; i++) {
-                    if (schema == databases[i][db_col_index]) {
-                        std::cout << "Database : " << databases[i][db_col_index] << " Found ! " << std::endl;
+                for (int i = 0; i < schema_vec[schema_vec_row_index].size(); i++) {
+                    if (schema_choice == schema_vec[schema_vec_row_index][i]) {
+                        std::cout << "Database : " << schema_vec[schema_vec_row_index][i] << " Found ! " << std::endl;
                         run = false;
                         found = true;
 
                         //Saving the Database Name That The User Chose
-                        OperatingDatabase = databases[i][db_col_index];
+                        OperatingDatabase = schema_vec[schema_vec_row_index][i];
                     }
                     else {
-                        if (i == db_row_count[db_col_index] - 1 && found == false) {
+                        if ((i == schema_vec[schema_vec_row_index].size() - 1) && (found == false)) {
                             std::cout << "Database Was Not Found !" << std::endl;
                             std::cout << "Please Try Again : ";
                             message = false;
@@ -240,7 +219,7 @@ public:
 
 
             //Moving on to the next column
-            db_col_index++;
+            schema_vec_row_index++;
         }
         catch (sql::SQLException& e) {
             std::cout << "\nError : " << e.what() << std::endl;
@@ -297,16 +276,21 @@ public:
     void get_column_names() {
         //Getting Columns Names To A VECTOR
 
-        for (int i = 1; i <= order_columns_amount; i++) {
-            col_names.push_back(class_meta_res->getColumnName(i));
+        for (int i = 0; i < class_meta_res->getColumnCount(); i++) {
+            col_names.push_back(class_meta_res->getColumnName(i + 1));
             if (i == order_columns_amount) {
-                col_names.push_back("\0");
+                col_names.push_back("\0"); // The names of the columns are being saved in a private variable so it can be used
+                // Globally across the class for easier usage and for safety reasons too
             }
         }
+        std::string* returnptr = &col_names[0];
+
     }
 
+
+
     void show_column_names() {
-        std::cout << "The columns are : " << order_columns_amount << std::endl;
+        std::cout << "The columns are : " << col_names.size() << std::endl;
         std::cout << "\n";
         for (int i = 0; i <= col_names.size(); i++) {
             if (col_names[i] != "\0")
@@ -322,6 +306,11 @@ public:
             std::cout << "Column Type Saved : " << col_type_name[i] << std::endl;
             j++;
         }
+
+    }
+
+
+    int order_col_amount() {
 
     }
 
@@ -422,7 +411,6 @@ public:
                                                                                                //is not possible only character by character not entirely
 
 
-
         for (int i = 0; i < comv.size(); i++) {
             if (col_names[i] != "\0") {
                 if (comv[i + 1] == col_names[i]) {
@@ -445,46 +433,7 @@ public:
         }
 
 
-        if (comv.size() != NULL) {
-            std::cout << "Next 3 Characters " << std::endl;
-            std::cout << "1st : " << (comv[1]) << std::endl;
-            std::cout << "2nd : " << (comv[2]) << std::endl;
-            std::cout << "3rd : " << (comv[3]) << std::endl;
-        }
-
-        else {
-            std::cout << "Error on line 389" << std::endl;
-        }
     }
-
-    /*void get_col_names_char_count() {
-        if (command == "SELECT") {
-            for (int i = 0; i <= col_names[i].size(); i++) {
-                if (col_names[0][] == )
-
-            }
-        }
-        else if () {}
-        else if () {}
-        else if () {}
-        else if () {}
-
-
-    }*/
-
-
-    /*void get_order_cols_names() {
-
-        std::string colv = class_meta_res->getColumnName();
-
-
-        colv = class_meta_res->getColumnName();
-
-        for (int i = 0; i <= col_amount; i++) {
-            col_names.push_back(*(colv + i));
-        }
-
-    }*/
 
 
     //Finding Order Type
@@ -496,52 +445,52 @@ public:
         ssorder >> command;
 
 
-        std::cout << "From : " + command << std::endl;
+        std::cout << "From : " << command << std::endl;
         for (char& com : command) {
             com = std::toupper(static_cast<unsigned char>(com));
         }
-        std::cout << "To : " + command << std::endl;
+        std::cout << "To : " << command << std::endl;
 
 
         if (command == "SELECT") {
             std::cout << "Order Found ! " << std::endl;
             order_type = command;
-            order_type_size = order_type.size();
+
         }
         else if (command == "UPDATE") {
             std::cout << "Order Found ! " << std::endl;
             order_type = command;
-            order_type_size = order_type.size();
+
         }
         else if (command == "ALTER") {
             std::cout << "Order Found ! " << std::endl;
             order_type = command;
-            order_type_size = order_type.size();
+
         }
         else if (command == "CREATE") {
             std::cout << "Order Found ! " << std::endl;
             order_type = command;
-            order_type_size = order_type.size();
+
         }
         else if (command == "INSERT") {
             std::cout << "Order Found ! " << std::endl;
             order_type = command;
-            order_type_size = order_type.size();
+
         }
         else if (command == "CONTINUE") {
             std::cout << "\nPlease move on ." << std::endl;
             special_order_type = nullptr;
-            order_type_size = NULL;
+
         }
         else if (command == "END") {
             std::cout << "\nAdios" << std::endl;
             special_order_type = nullptr;
-            order_type_size = NULL;
+
         }
         else {
             std::cout << "Order Not Found ! " << std::endl;
             order_type = "ERROR";
-            order_type_size = -1;
+
         }
 
 
@@ -631,6 +580,9 @@ int main() {
             object1.set_order(obj_sqlorder);
             object1.Order_Type();
             object1.order_col_name_check();
+            object1.get_column_names();
+            object1.get_columns_type_name();
+            //object1.
 
             std::string order_type = object1.get_order_type();
 
@@ -659,275 +611,13 @@ int main() {
 }
 
 
-/*try {
-      std::cout << "Program Started ! " << std::endl;
-
-      sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-
-      std::cout << "Driver Ok !" << std::endl;
-
-
-      std::cout << "Connecting..." << std::endl;
-
-      //Creating connection with the sql database
-
-      sql::Connection* con = driver->connect("tcp://127.0.0.1:3306", "root", "150505");
-
-      std::cout << "Connection With Database Established !" << std::endl;
-
-
-      //Statement Creation
-      //or else creating a message type of object so that we can communicate with sql database and server
-      sql::Statement* stmt = con->createStatement();
-
-      //Creating a Result
-      sql::ResultSet* res = stmt->executeQuery("SHOW DATABASES");
-
-      std::cout << "The Available Schemas To Use : " << std::endl;
-
-      std::cout << "\tDatabases " << std::endl;
-      std::cout << "\t--------- " << std::endl;
-
-
-      //Getting Default Schema of the Database
-      std::string DefaultSchema = con->getSchema();
-
-      std::cout << DefaultSchema << std::endl;
-
-
-      bool run = true;
-      std::string schemachoice;
-
-      while (run) {
-          if (res->next() != false) {//next function returns either true or false
-              //based on the issue , if there is a next row or not
-              std::cout << "\t" << res->getString("Database") << std::endl;
-
-          }
-          else {
-
-              run = false;
-              //By executting this statement it resets the index of the next function
-              //and generally the class Result Set along with it's operations data
-              res = stmt->executeQuery("SHOW DATABASES");
-
-              bool schemafound = false;
-
-
-
-              while (!schemafound) {
-
-                  std::cout << "\nChoose a Schema : ";
-                  std::cin >> schemachoice;
-
-
-                  //Resetting Next() function
-                  res->beforeFirst();
-
-
-                  bool schemaloop;
-
-                  while (schemaloop = res->next()) {
-
-                      if (res->getString(1) == schemachoice) {
-
-                          con->setSchema(schemachoice);
-
-                          //Setting The Schema that we are about to use
-                          std::cout << "Schema " << schemachoice << " received ! " << std::endl;
-                          schemafound = true;
-
-
-
-                      }
-                      else {
-                          if(!schemafound)
-                              std::cout << "SCHEMA NAME NOT MATCHED !" << res->getString(1)<< std::endl;
-
-
-                      }
-
-                  }
-
-                  if (schemafound == false ) {
-                      if (schemaloop == false) {
-                          std::cout << "INCORRECT SCHEMA NAME ! " << std::endl;
-                          std::cout << "Please Try Again : " << std::endl;
-                      }
-                      else {
-
-
-                      }
-                  }
-
-
-
-
-              }
-
-          }
-
-      }
-
-
-
-
-      bool terminate = true;
-      bool  text_message = true;
-
-      std::string sqlorder;
-      std::string checking_order;
-
-      std::cout << "Type an SQL Order : ";
-
-      //The reason that we use .ignore below is because it finds the enter symbol (\n)
-      //From the schema Choice name cin and due to the newline character which is enterd
-      //Once ENTER key is pressed by the keyboard , it reads an entire new empty line
-      //So the Driver Throws an Exception since the function getline finds a new empty line
-      std::getline(std::cin.ignore() , sqlorder);
-
-
-      sql::Statement* order_stmt = con->createStatement();
-
-      sql::ResultSet* order_res = order_stmt->executeQuery(sqlorder);
-
-
-      sql::ResultSetMetaData* meta_res = order_res->getMetaData();
-
-
-      while (terminate) {
-
-
-
-          if (text_message == false) {
-              std::cout << "Type in an SQL Order : " << std::endl;
-              std::getline(std::cin >> std::ws, sqlorder);
-
-              order_res = order_stmt->executeQuery(sqlorder);
-              meta_res = order_res->getMetaData();
-
-          }
-
-
-          int cols = meta_res->getColumnCount();
-          size_t rows = order_res->rowsCount();
-          std::vector<std::string> col_names;
-
-
-          std::cout << "The columns are : " << cols << std::endl;
-          for (int i = 1; i <= cols; i++) {
-              col_names.push_back(meta_res->getColumnName(i));
-
-          }
-
-          std::cout << "Column names are : ";
-          //In the for Below , due to the
-          for (int i = 0; i < col_names.size(); i++) {
-              std::cout << col_names[i] << "  ";
-
-          }
-
-          std::cout << "\nCOLUMNS SAVED !!!" << std::endl;
-
-
-          std::cout << std::endl << "The rows are : " << rows << "\n"  << std::endl;
-
-
-
-
-          //Resetting Next() function
-          //order_res->beforeFirst();
-
-
-          while (order_res->next()) {
-
-              if (sqlorder == " ") {
-                  std::cout << "ERROR !" << std::endl;
-
-              }
-              else {
-                  for (int i = 1; i <= cols; i++) {
-                      std::string shell_type = meta_res->getColumnTypeName(i);
-                      std::string shell_name = meta_res->getColumnName(i);
-
-                      if (shell_type == "INT" || shell_type == "TINYINT") {
-                          std::cout << shell_name + ":" << order_res->getInt(i) << "\t";
-                      }
-                      else if (shell_type == "VARCHAR" || shell_type == "TEXT") {
-                          std::cout << shell_name + ": " << "\t" << order_res->getString(i) << "\t";
-                      }
-                      else if (shell_type == "DOUBLE" || shell_type == "DECIMAL") {
-                          std::cout << shell_name + ": \t" << order_res->getDouble(i);
-                      }
-                      else {
-                          std::cout << "Non Compatible Type !" << std::endl;
-                      }
-
-
-                  }
-                  std::cout << " " << std::endl;
-
-              }
-          }
-
-          if (text_message) {
-              std::cout << "If you wish to continue typing ?"
-                  << "\n(Type either end or continue)." << std::endl;
-
-              std::getline(std::cin, sqlorder);
-
-              std::transform(sqlorder.begin(), sqlorder.end(), sqlorder.begin(), ::toupper);
-
-              text_message = false;
-          }
-
-
-
-          if (sqlorder == "END") {
-              terminate = false;
-
-          }
-
-
-          std::transform(sqlorder.begin(), sqlorder.end(), sqlorder.begin(), ::toupper);
-          checking_order = sqlorder;
-
-          if (checking_order == "END") {
-              terminate = false;
-
-              //Deleting statement and result objects
-
-          }
-
-
-          std::cout << "\nHello World!\nGoodbye World !\n";
-
-      }
-
-      delete order_res;
-      delete order_stmt;
-
-
-  }
-  catch (sql::SQLException& e) {
-
-      std::cout << "Error : " << e.what() << std::endl;
-
-  }
-
-  std::cout << "Program Terminated Successfully ! " << std::endl;
-  */
-
-
-
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
+  // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
+  // Debug program: F5 or Debug > Start Debugging menu
+
+  // Tips for Getting Started: 
+  //   1. Use the Solution Explorer window to add/manage files
+  //   2. Use the Team Explorer window to connect to source control
+  //   3. Use the Output window to see build output and other messages
+  //   4. Use the Error List window to view errors
+  //   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
+  //   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
