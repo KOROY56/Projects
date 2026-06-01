@@ -1,6 +1,5 @@
 // Database_Management.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
-
 // project01.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 #pragma once
@@ -15,6 +14,7 @@
 #include <mysql/jdbc.h>
 #include <mysql_driver.h>
 #include <mysql_connection.h>
+#include <cppconn/sqlstring.h>
 #include <cppconn/driver.h>
 #include <cppconn/exception.h>
 #include <cppconn/statement.h>
@@ -35,8 +35,12 @@ private:
 
 
     int rows = 0;
-    int table_columns_amount = 0;
-    int order_columns_amount = 0;
+    std::vector<int> col_type_name_count; // This is a vector that stores the amount of Columns that there are in a single data base
+    // The vector above is meant to provide the max value for the index , when a research is 
+    // about to be done for a specific database . 
+    // Each Col 
+    int table_columns_amount = 0; // It is what it's name says 
+    int order_columns_amount = 0; // It is what it's name says
 
 
     std::string order = "";
@@ -59,7 +63,6 @@ private:
 
 
 
-
 public:
     std::vector<std::string> comv;
 
@@ -76,11 +79,15 @@ public:
             class_driver = sql::mysql::get_mysql_driver_instance();
 
             std::cout << "Driver Working ! " << std::endl;
+
+            return true;
         }
         catch (sql::SQLException& e) {
             std::cout << "\nError : " << e.what() << std::endl;
             return false;
         }
+
+
     }
 
     bool connection_creation() {
@@ -91,22 +98,27 @@ public:
             class_con = class_driver->connect("tcp://127.0.0.1:3306", "root", "150505");
 
             std::cout << "Sever Connected  Succesfully ! " << std::endl;
+
+            return true;
         }
         catch (sql::SQLException& e) {
             std::cout << "\nError : " << e.what() << std::endl;
             return false;
         }
 
+
+
     }
 
     bool statement_creation() {
         try {
-            std::cout << "\nCreating the MYSQL message ... " << std::endl;
+            std::cout << "\nCreating MYSQL Statement ... " << std::endl;
 
             class_stmt = class_con->createStatement();
 
-            std::cout << "MYSQL message Created ! " << std::endl;
+            std::cout << "MYSQL Statement Created ! " << std::endl;
             return true;
+
         }
         catch (sql::SQLException& e) {
             std::cout << "\nError : " << e.what() << std::endl;
@@ -117,7 +129,43 @@ public:
 
     bool result_creation() {
         try {
-            class_res = class_stmt->executeQuery(order);
+            std::string order_t = get_order_type(); // Simply adding calling for order_type , (SELECT,ALTER,CREATE,etc.)
+            if (order_t == "SELECT") {
+                class_res = class_stmt->executeQuery(order);
+                std::cout << "Results Extracted Successfully !" << std::endl;
+            }
+            else if (order_t == "CREATE") {
+                class_stmt->execute(order);
+                std::cout << "Create Order Submitted !" << std::endl;
+            }
+            else if (order_t == "ALTER") {
+                class_stmt->execute(order);
+                std::cout << "Table Altered !" << std::endl;
+            }
+            else if (order_t == "UPDATE") {
+                class_stmt->executeUpdate(order);
+                std::cout << "Table Updated !" << std::endl;
+            }
+            else if (order_t == "DROP") {
+                class_stmt->execute(order);
+                std::cout << "Table Dropped !" << std::endl;
+            }
+            else if (order_t == "INSERT") {
+                class_stmt->executeUpdate(order);
+                std::cout << "New Lines Inserted !" << std::endl;
+            }
+            else if (order_t == "SHOW") {
+                class_stmt->execute(order);
+                std::cout << "Show Order Submitted !" << std::endl;
+            }
+            else if (order_t == "DELETE") {
+                class_stmt->executeUpdate(order);
+                std::cout << "Delete order Submitted !" << std::endl;
+            }
+            else {
+                std::cout << "Pass" << std::endl;
+            }
+
             return true;
         }
         catch (sql::SQLException& e) {
@@ -129,24 +177,63 @@ public:
 
     void result_extraction() {
 
-        if (comv[1] != "*") {
-            while (class_res->next() != false) {
-                if (class_res == nullptr) {
-                    std::cout << "class_res Empty !" << std::endl;
-                    std::cout << "Error on Line 142" << std::endl;
-                }
-                else {
-                    std::cout << col_names[0] << class_res->getInt(col_names[0]) << " ";
-                    std::cout << col_names[1] << class_res->getString(col_names[1]) << std::endl;
+        std::string order_t = get_order_type(); //Get order type function simply passes what order has the user writen , so that we 
+        //so that we know what type of order to execute using class_res 
+        //Either execute,executequery or executeUpdate
+        if (order_t == "SELECT") {
+            if (comv[1] != "*") {
+                while (class_res->next() != false) {
+                    if (class_res == nullptr) {
+                        std::cout << "class_res Empty !" << std::endl;
+                        std::cout << "Error on Line 142" << std::endl;
+                    }
+                    else {
+                        std::cout << col_names[0] << class_res->getInt(col_names[0]) << " ";
+                        std::cout << col_names[1] << class_res->getString(col_names[1]) << std::endl;
 
+                    }
                 }
             }
+            else {
+                //Here the issue is to see what type of data are stored in the columns database
+                //If it is needed because we want to appear data that we are not aware what of value are that data
+                //in the specific columns , so check ask AI how it works understand how the function works and then
+                //You would probably either need to use something general or simply check what type of value the column
+                //Has and based on that type of value that can be stored within the column to either call the string function
+                //to print data or the int function to print the accordingly data . 
+                //Check it out .
+                if (col_names.size() != NULL) {
+                    class_res->beforeFirst();
+                    while (class_res->next()) {}
+                    for (int i = 0; i < col_names.size(); i++) {
+                        if (col_type_name[i] == "INT" || col_type_name[i] == "INTEGER" || col_type_name[i] == "SMALLINT" || col_type_name[i] == "TINYINT") {
+                            std::cout << col_names[i] << " : " << class_res->getInt(col_names[i]) << std::endl;
+                        }
+                        else if (col_type_name[i] == "BIGINT") {
+                            std::cout << col_names[i] << " : " << class_res->getInt64(col_names[i]) << std::endl;
+                        }
+                        else if (col_type_name[i] == "STRING" || col_type_name[i] == "TEXT" || col_type_name[i] == "CHAR") {
+                            std::cout << col_names[i] << "" << class_res->getString(col_names[i]) << std::endl;
+                        }
+                        else if (col_type_name[i] == "DOUBLE" || col_type_name[i] == "FLOAT" || col_type_name[i] == "DECIMAL" || col_type_name[i] == "NUMERIC") {
+                            std::cout << col_names[i] << " : " << class_res->getDouble(col_names[i]) << std::endl;
+                        }
+                        else if (col_type_name[i] == "BLOB" || col_type_name[i] == "LONGBLOB" || col_type_name[i] == "BINARY" || col_type_name[i] == "VARBINARY") {
+                            std::cout << col_names[i] << " : " << class_res->getBlob(col_names[i]) << std::endl;
+                        }
+                    }
+                }
+            }
+        }
+        else if (order_t == "SHOW") {
+
+
         }
     }
 
     bool metadata_creation() {
         try {
-            //class_meta_res = class_res->getMetadata();
+            class_meta_res = class_res->getMetaData();
             return true;
         }
         catch (sql::SQLException& e) {
@@ -220,6 +307,8 @@ public:
 
             //Moving on to the next column
             schema_vec_row_index++;
+
+            return true;
         }
         catch (sql::SQLException& e) {
             std::cout << "\nError : " << e.what() << std::endl;
@@ -292,12 +381,11 @@ public:
     void show_column_names() {
         std::cout << "The columns are : " << col_names.size() << std::endl;
         std::cout << "\n";
-        for (int i = 0; i <= col_names.size(); i++) {
+        for (int i = 0; i < col_names.size(); i++) {
             if (col_names[i] != "\0")
                 std::cout << col_names[i] << std::endl;
         }
     }
-
 
     void get_columns_type_name() {
         int j = 1;
@@ -411,9 +499,9 @@ public:
                                                                                                //is not possible only character by character not entirely
 
 
-        for (int i = 0; i < comv.size(); i++) {
-            if (col_names[i] != "\0") {
-                if (comv[i + 1] == col_names[i]) {
+        for (int i = 1; i < comv.size(); i++) {
+            if (col_names[i - 1] != "\0") {
+                if (comv[i - 1] == col_names[i]) {
                     std::cout << "Character Matched !" << std::endl;
                 }
                 else if (i != comv.size() - 1) {
@@ -422,7 +510,6 @@ public:
                 }
                 else {
                     std::cout << "Word Not Matched !" << std::endl;
-
                     break;
                 }
             }
@@ -472,6 +559,11 @@ public:
             order_type = command;
 
         }
+        else if (command == "DROP") {
+            std::cout << "Order Found !" << std::endl;
+            order_type = command;
+
+        }
         else if (command == "INSERT") {
             std::cout << "Order Found ! " << std::endl;
             order_type = command;
@@ -502,11 +594,11 @@ public:
         }
 
         if (obj_sqlorder == "END")
-            return false;
+            return true;
         if (obj_sqlorder == "CONTINUE")
             return true;
+        return false;
     }
-
 
 
 };
@@ -532,14 +624,17 @@ int main() {
             }
             else {
                 std::cout << "Statement Creation Failed.\n" << std::endl;
+                return 0;
             }
         }
         else {
-            std::cout << "Connection Creation Failed." << std::endl;
+            std::cout << "Connection Establishment Failed." << std::endl;
+            return 0;
         }
     }
     else {
         std::cout << "Driver Creation Failed." << std::endl;
+        return 0;
     }
 
     bool text_message = true;
@@ -610,14 +705,13 @@ int main() {
     return 0;
 }
 
+// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
+// Debug program: F5 or Debug > Start Debugging menu
 
-  // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-  // Debug program: F5 or Debug > Start Debugging menu
-
-  // Tips for Getting Started: 
-  //   1. Use the Solution Explorer window to add/manage files
-  //   2. Use the Team Explorer window to connect to source control
-  //   3. Use the Output window to see build output and other messages
-  //   4. Use the Error List window to view errors
-  //   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-  //   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
+// Tips for Getting Started: 
+//   1. Use the Solution Explorer window to add/manage files
+//   2. Use the Team Explorer window to connect to source control
+//   3. Use the Output window to see build output and other messages
+//   4. Use the Error List window to view errors
+//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
+//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
